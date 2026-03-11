@@ -41,7 +41,6 @@ total_count = 0
 violation_count = 0
 TTL = 90
 
-# current running lane
 current_lane = 1
 
 
@@ -57,29 +56,23 @@ classNames = [
 # ----------------------------
 # Signal Time Logic
 # ----------------------------
-# ----------------------------
-# Signal Time Logic
-# ----------------------------
 def send_to_arduino(vehicle_count):
 
-    # 4 seconds per vehicle
     signal_time = vehicle_count * 4
 
-    # minimum signal time
     if signal_time < 5:
         signal_time = 5
 
-    # maximum signal time
     if signal_time > 40:
         signal_time = 40
 
-    print("Vehicles detected:", vehicle_count)
+    print("\nVehicles detected:", vehicle_count)
     print("Allocated Signal Time:", signal_time)
 
-    # send signal duration to ESP32
     arduino.write(f"{signal_time}\n".encode())
 
     return signal_time
+
 
 # ----------------------------
 # Main Camera Processing
@@ -130,11 +123,13 @@ def process_camera():
 
                     cv2.rectangle(frame,(x1,y1),(x2,y2),(0,255,0),2)
 
-                    cvzone.putTextRect(frame,
-                                       f"{current_class} {conf}",
-                                       (x1,y1-10),
-                                       scale=1,
-                                       thickness=2)
+                    cvzone.putTextRect(
+                        frame,
+                        f"{current_class} {conf}",
+                        (x1,y1-10),
+                        scale=1,
+                        thickness=2
+                    )
 
 
         # ----------------------------
@@ -159,24 +154,31 @@ def process_camera():
 
                 violation_count+=1
 
-                cv2.putText(frame,
-                "Zebra Violation",
-                (x1,y1-40),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.8,
-                (0,0,255),
-                2)
+                cv2.putText(
+                    frame,
+                    "Zebra Violation",
+                    (x1,y1-40),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (0,0,255),
+                    2
+                )
 
 
             # Vehicle Counting
             if obj_id not in active_ids:
+
                 total_count+=1
                 active_ids[obj_id]=0
+
             else:
+
                 active_ids[obj_id]=0
 
 
+        # ----------------------------
         # Remove inactive IDs
+        # ----------------------------
         inactive_ids=[
             id_ for id_,frames in active_ids.items()
             if id_ not in current_ids and frames>TTL
@@ -195,12 +197,15 @@ def process_camera():
         # ----------------------------
         cv2.line(frame,(0,500),(1280,500),(255,255,255),3)
 
-        cv2.putText(frame,"Zebra Crossing",
-        (10,480),
-        cv2.FONT_HERSHEY_SIMPLEX,
-        0.8,
-        (255,255,255),
-        2)
+        cv2.putText(
+            frame,
+            "Zebra Crossing",
+            (10,480),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (255,255,255),
+            2
+        )
 
 
         # ----------------------------
@@ -219,29 +224,31 @@ def process_camera():
         # ----------------------------
         # Signal Display
         # ----------------------------
-        remaining_time = 0
-
         if signal_active:
 
             remaining_time = int(signal_duration-(time.time()-signal_start_time))
 
-            cv2.putText(frame,
-            f"Lane {current_lane} GREEN : {remaining_time}s",
-            (820,60),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1.2,
-            (0,255,0),
-            3)
+            cv2.putText(
+                frame,
+                f"Lane {current_lane} GREEN : {remaining_time}s",
+                (820,60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1.2,
+                (0,255,0),
+                3
+            )
 
         else:
 
-            cv2.putText(frame,
-            "WAITING SIGNAL",
-            (850,60),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            1,
-            (0,0,255),
-            3)
+            cv2.putText(
+                frame,
+                "WAITING SIGNAL",
+                (850,60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                1,
+                (0,0,255),
+                3
+            )
 
 
         cv2.imshow("Traffic Camera",frame)
@@ -254,7 +261,12 @@ def process_camera():
 
             signal_duration = send_to_arduino(frame_vehicle_count)
 
+            print("Cycle Completed")
+            print("Vehicles counted:", total_count)
+            print("Violations detected:", violation_count)
+
             total_count=0
+            violation_count=0
             active_ids.clear()
 
             signal_active=True
@@ -270,7 +282,6 @@ def process_camera():
 
         if cv2.waitKey(1)&0xFF==ord('q'):
             break
-
 
 
 # ----------------------------
