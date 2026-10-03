@@ -12,7 +12,7 @@ from sort import Sort
 # ----------------------------
 # Arduino Connection
 # ----------------------------
-arduino = serial.Serial('COM3',9600,timeout=1)
+arduino = serial.Serial('COM6',9600,timeout=1)
 time.sleep(2)
 
 
